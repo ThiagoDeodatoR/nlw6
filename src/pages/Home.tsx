@@ -1,6 +1,9 @@
+import { FormEvent, useState } from "react";
 import {useHistory} from "react-router-dom";
 
 import { useAuthContext } from "../hooks/useAuthContext";
+
+import { database } from "../services/firebase";
 
 import { Button } from "../components/Button";
 
@@ -13,8 +16,10 @@ import "../styles/auth.scss";
 
 
 
+
 export function Home() {
     const history = useHistory();
+    const [roomCode, setRoomCode ] = useState("");
     const { user, signInWithGoogle } = useAuthContext();
 
     async function handleCreateRoom() {
@@ -23,6 +28,24 @@ export function Home() {
         }
 
         history.push("/rooms/new"); 
+    }
+
+    async function handleJoinRoom(event:FormEvent) {
+        event.preventDefault();
+
+        if(roomCode.trim() === "") {
+            alert("Please inform a room code.");
+            return;
+        }
+
+        const roomRef = await database.ref(`rooms/${roomCode}`).get();
+
+        if(!roomRef.exists()) {
+            alert("Room does not exists.");
+            return;
+        }
+
+        history.push(`/rooms/${roomCode}`)
     }
 
     return (
@@ -34,16 +57,18 @@ export function Home() {
             </aside>
             <main>
                 <div className="main-content">
-                    <img src={logoImg} alt="LetmeAsk" />
+                    <img src={logoImg} alt="Let me Ask" />
                     <button className="create-room" onClick={handleCreateRoom}>
                         <img src={googleIconImg} alt="Logo do Google" />
                         Crie sua sala com o Google
                     </button>
                     <div className="separator">ou entre em uma sala</div>
-                    <form action="">
+                    <form onSubmit={handleJoinRoom}>
                         <input 
                             type="text" 
                             placeholder="Digite o código da sala"
+                            onChange={event => setRoomCode(event.target.value)}
+                            value={roomCode}
                         />
                         <Button type="submit">
                             Entrar na sala
